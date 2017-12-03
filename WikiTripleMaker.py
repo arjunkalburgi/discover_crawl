@@ -28,7 +28,7 @@ class WikiTripleMaker():
 
         self.setTopicAsSubject()
 
-        # self.parseWikiPage()
+        self.parseWikiPage()
 
         # self.pushTriple()
 
@@ -47,38 +47,44 @@ class WikiTripleMaker():
             print("That topic didn't work, please try again")
             exit()
 
-
     def setTopicAsSubject(self): 
         # CREATE (Keanu:Person {name:'Keanu Reeves', born:1964})
-        page = wikipedia.page(self._topic)
+        self._page = wikipedia.WikipediaPage(self._topic)
 
-        self.subjectnode = Node("Page", title=page.title, url=page.url)
+        self.subjectnode = Node("Page", title=self._page.title, 
+                                        url=self._page.url,
+                                        abstract=self._page.summary)
 
         self._graph.appendNode(self.subjectnode)
-        
+
 
     def parseWikiPage(self): 
-        # Make a triple 
-        # subject, make tripe 
-        
-        # content = wikipedia.page(self._topic).content
-        pass
-        # >>> ny = wikipedia.page("New York")
-        # >>> ny.content
+        sections = self._page.sections
 
-        # self.subject["categories"] = page.categories
-        # self.subject["content"] = page.content
+        for section in sections: 
+            if len(self._page.section(section)): 
+                
+                s = self.makeWikiSection(section)
+                self._graph.makeRelationship(self.subjectnode, "HASSUBTOPIC", s)
+
+                # self.parseWikiSection(s)
+
+    def makeWikiSection(self, sectiontitle): 
+
+        if sectiontitle in wikipedia.search(sectiontitle) and sectiontitle is not "See also": 
+            return Node("Section", title=sectiontitle, 
+                                   content=self._page.section(sectiontitle), 
+                                   mainarticleurl=wikipedia.page(self._topic).url)
+
+        return Node("Section", title=sectiontitle, content=self._page.section(sectiontitle))
 
 
-    def pushTriple(self, property, object): 
-        # propertystring = "[:" + property[0] + "{" + property[1] + ":['" + property[2] + "']}]"
-        # objectstring = 
-        # MATCH (u:Person {name:'Keanu Reeves'})
-        # CREATE (u)-[:ACTED_IN {roles:['Peo']}]->(ZeMatric:Movie {title:'Ze Matric', released:2000, tagline:'Welcome to the Real Fake World'})
-        pass
 
+    def dump(self): 
+        self._graph.printData()
 
-
+    def view(self): 
+        self._graph.drawGraph()
 
     '''
 

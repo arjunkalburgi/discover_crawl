@@ -42,12 +42,9 @@ class GraphMaker(object):
         options = {"Page": "title", "Section": "title"}
         draw(self.graph, options)
 
-    def printData(self): 
-        data = self.graph.run("match (n) return n")
-        for d in data:
-            print(d)
-
-    def printData(self, querystring): 
+    def printData(self, querystring=None): 
+        if querystring is None: 
+            querystring = "match (n) return n"
         data = self.graph.run(querystring)
         for d in data:
             print(d)

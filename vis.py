@@ -19,8 +19,8 @@ def vis_network(nodes, edges, physics=False):
     html = """
     <html>
     <head>
-      <script type="text/javascript" src="../lib/vis/dist/vis.js"></script>
-      <link href="../lib/vis/dist/vis.css" rel="stylesheet" type="text/css">
+      <script type="text/javascript" src="vis.js"></script>
+      <link href="vis.css" rel="stylesheet" type="text/css">
     </head>
     <body>
     <div id="{id}"></div>
@@ -67,7 +67,7 @@ def vis_network(nodes, edges, physics=False):
     # modified
     filename = "file://" + os.path.dirname(os.path.realpath(__file__)) + "/graph.html"
 
-    file = open(filename, "w+")
+    file = open("graph.html", "w+")
     file.write(html)
     file.close()
 
@@ -126,5 +126,5 @@ def draw(graph, options, physics=False, limit=100):
 
             edges.append({"from": source_info["id"], "to": target_info["id"], "label": rel.type()})
 
-    print(nodes, edges)
+    # print(nodes, edges)
     return vis_network(nodes, edges, physics=physics)
