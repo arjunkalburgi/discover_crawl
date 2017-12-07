@@ -15,6 +15,9 @@ class GraphMaker(object):
             Get node (as "n")
                 match(n:Page {title: "Finance"})
 
+            node = self.graph.evaluate("match (n:Section) where n.title='See also' return n")
+
+
     '''
 
     def __init__(self):
@@ -42,12 +45,25 @@ class GraphMaker(object):
         options = {"Page": "title", "Section": "title"}
         draw(self.graph, options)
 
-    def printData(self, querystring=None): 
+    def getData(self, querystring=None): 
         if querystring is None: 
             querystring = "match (n) return n"
-        data = self.graph.run(querystring)
+        return self.graph.data(querystring)
+
+    def printData(self, querystring=None): 
+        data = self.getData(querystring)
         for d in data:
             print(d)
+
+    def getNodeByTitle(self, nodeTitle): 
+        node = self.graph.evaluate("match (n:Section) where n.title='" + nodeTitle + "' return n")
+        if node: 
+            return node
+        else: 
+            print("No node by that title")
+            return 
+
+
 
 
     

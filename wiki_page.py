@@ -1,36 +1,32 @@
-"""The main command for asking questions"""
+"""parse a page"""
 
-# from .base import Base
-import re, requests, json, inquirer, unicodedata, Algorithmia, wikipedia
-import GraphMaker
+# import re, requests, json, inquirer, unicodedata, Algorithmia, 
+
+import GraphMaker, wikipedia
 from py2neo import Node
 
-full_api = "https://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&format=json&titles=" 
-# description_api = "https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro=&explaintext=&titles=" 
-        
-
-class WikiTripleMaker():
+class wiki_page():
     """
 
     """
 
-    def __init__(self):
-        # user = neo4j 
-        # pw = ece406
-        uri = "bolt://127.0.0.1:7687/browser/"
-        user = 'neo4j'
-        password = 'ece406'
+    def __init__(self, topic=None):
+        if topic is not None: 
+            self.getTopic(topic)
         self._graph = GraphMaker.GraphMaker()
         
 
-    def run(self, topic): 
-        self.getTopic(topic)
+
+    def run(self, topic="/"): 
+        try:
+            print(self._topic) 
+        except AttributeError: 
+            self.getTopic(topic)
 
         self.setTopicAsSubject()
 
         self.parseWikiPage()
 
-        # self.pushTriple()
 
 
     def getTopic(self, topic): 
@@ -58,6 +54,7 @@ class WikiTripleMaker():
         self._graph.appendNode(self.subjectnode)
 
 
+
     def parseWikiPage(self): 
         sections = self._page.sections
 
@@ -69,6 +66,10 @@ class WikiTripleMaker():
 
                 # self.parseWikiSection(s)
 
+
+    def getSections(self): 
+        return self._graph.getData("MATCH (fin:Page {title:'" + self._topic + "'})-[:HASSUBTOPIC]->(sections) RETURN sections.title")
+
     def makeWikiSection(self, sectiontitle): 
 
         if sectiontitle in wikipedia.search(sectiontitle) and sectiontitle is not "See also": 
@@ -78,6 +79,8 @@ class WikiTripleMaker():
 
         return Node("Section", title=sectiontitle, content=self._page.section(sectiontitle))
 
+    def exploreWikiSection(self, sectiontitle): 
+        return wiki_section.wiki_section()
 
 
     def dump(self): 
