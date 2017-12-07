@@ -68,7 +68,8 @@ class wiki_page():
 
 
     def getSections(self): 
-        return self._graph.getData("MATCH (fin:Page {title:'" + self._topic + "'})-[:HASSUBTOPIC]->(sections) RETURN sections.title")
+        s = self._graph.getData("MATCH (fin:Page {title:'" + self._topic + "'})-[:HASSUBTOPIC]->(sections) RETURN sections.title")
+        return [el.values()[0] for el in s]
 
     def makeWikiSection(self, sectiontitle): 
 
