@@ -10,10 +10,12 @@ class wiki_page():
 
     """
 
-    def __init__(self, topic=None):
+    def __init__(self, graph=None, topic=None):
         if topic is not None: 
             self.getTopic(topic)
-        self._graph = GraphMaker.GraphMaker()
+        if graph is None: 
+            graph = GraphMaker.GraphMaker()
+        self._graph = graph
         
 
 
@@ -26,6 +28,9 @@ class wiki_page():
         self.setTopicAsSubject()
 
         self.parseWikiPage()
+
+        print("Explore: ")
+        self.getSections()
 
 
 
@@ -64,12 +69,7 @@ class wiki_page():
                 s = self.makeWikiSection(section)
                 self._graph.makeRelationship(self.subjectnode, "HASSUBTOPIC", s)
 
-                # self.parseWikiSection(s)
 
-
-    def getSections(self): 
-        s = self._graph.getData("MATCH (fin:Page {title:'" + self._topic + "'})-[:HASSUBTOPIC]->(sections) RETURN sections.title")
-        return [el.values()[0] for el in s]
 
     def makeWikiSection(self, sectiontitle): 
 
@@ -80,8 +80,16 @@ class wiki_page():
 
         return Node("Section", title=sectiontitle, content=self._page.section(sectiontitle))
 
+    def getSections(self): 
+        s = self._graph.getData("MATCH (fin:Page {title:'" + self._topic + "'})-[:HASSUBTOPIC]->(sections) RETURN sections.title")
+        return [el.values()[0] for el in s]
+
+    def getNodeByTitle(self, title): 
+        return self._graph.getNodeByTitle(title)
+
     def exploreWikiSection(self, sectiontitle): 
-        return wiki_section.wiki_section()
+        return wiki_section.wiki_section(self._graph, getNodeByTitle(sectiontitle))
+
 
 
     def dump(self): 
