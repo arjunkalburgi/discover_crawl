@@ -2,21 +2,34 @@
 
 # import re, requests, json, inquirer, unicodedata, Algorithmia, 
 
-import GraphMaker, wikipedia
+import GraphMaker, wikipedia, json
 from py2neo import Node
+
+from hiddenkeys import username, password
+
+from watson_developer_cloud import NaturalLanguageUnderstandingV1 as watson
+from watson_developer_cloud.natural_language_understanding_v1 import Features, ConceptsOptions, EntitiesOptions, KeywordsOptions, RelationsOptions, SemanticRolesOptions
+
+
 
 class wiki_page():
     """
 
     """
 
-    def __init__(self, graph=None, topic=None):
+    def __init__(self, topic=None):
         if topic is not None: 
             self.getTopic(topic)
-        if graph is None: 
-            graph = GraphMaker.GraphMaker()
-        self._graph = graph
-        
+        else: 
+            print("Please provide topic in run()") 
+
+        try:
+            self._graph = GraphMaker.GraphMaker()
+        except Exception as e:
+            raise "Make sure you have your neo4j server up :)"
+
+        self.watsonobj = watson(username=username, password=password, version="2017-02-27")
+
 
 
     def run(self, topic="/"): 
@@ -29,10 +42,16 @@ class wiki_page():
 
         self.parseWikiPage()
 
-        print("Explore: ")
-        self.getSections()
+        # print("Explore: ")
+        # self.getSections()
 
 
+
+
+
+
+
+    # setup 
 
     def getTopic(self, topic): 
         # if match 
@@ -50,6 +69,7 @@ class wiki_page():
 
     def setTopicAsSubject(self): 
         # CREATE (Keanu:Person {name:'Keanu Reeves', born:1964})
+        print("Setting " + self._topic + " as subject of graph")
         self._page = wikipedia.WikipediaPage(self._topic)
 
         self.subjectnode = Node("Page", title=self._page.title, 
@@ -60,7 +80,15 @@ class wiki_page():
 
 
 
+
+
+
+
+    # wikipage 
+
     def parseWikiPage(self): 
+        print("Formatting data on " + self._topic + " into Nodes for the graph")
+
         sections = self._page.sections
 
         for section in sections: 
@@ -69,34 +97,78 @@ class wiki_page():
                 s = self.makeWikiSection(section)
                 self._graph.makeRelationship(self.subjectnode, "HASSUBTOPIC", s)
 
-
-
     def makeWikiSection(self, sectiontitle): 
+        print("Accessing IBM Watson for NLP understanding on " + sectiontitle + " (subtopic of " + self._topic + ")")
+
+        response = self.watsonobj.analyze(text=self._page.section(sectiontitle), 
+                                     features=Features(
+                                        concepts=ConceptsOptions(limit=3),
+                                        entities=EntitiesOptions(limit=3), 
+                                        keywords=KeywordsOptions(limit=5),
+                                        relations=RelationsOptions(), 
+                                        semantic_roles=SemanticRolesOptions(limit=3)))
 
         if sectiontitle in wikipedia.search(sectiontitle) and sectiontitle is not "See also": 
             return Node("Section", title=sectiontitle, 
                                    content=self._page.section(sectiontitle), 
+                                   concepts=json.dumps(response["concepts"]),
+                                   entities=json.dumps(response["entities"]),
+                                   keywords=json.dumps(response["keywords"]),
+                                   relations=json.dumps(response["relations"]),
+                                   semantic_roles=json.dumps(response["semantic_roles"]),
                                    mainarticleurl=wikipedia.page(self._topic).url)
 
-        return Node("Section", title=sectiontitle, content=self._page.section(sectiontitle))
+        return Node("Section", title=sectiontitle, 
+                               content=self._page.section(sectiontitle), 
+                               concepts=json.dumps(response["concepts"]),
+                               entities=json.dumps(response["entities"]),
+                               keywords=json.dumps(response["keywords"]),
+                               relations=json.dumps(response["relations"]),
+                               semantic_roles=json.dumps(response["semantic_roles"]))
+
+
+
+
+
+
+
+    # sections
 
     def getSections(self): 
         s = self._graph.getData("MATCH (fin:Page {title:'" + self._topic + "'})-[:HASSUBTOPIC]->(sections) RETURN sections.title")
         return [el.values()[0] for el in s]
-
-    def getNodeByTitle(self, title): 
-        return self._graph.getNodeByTitle(title)
 
     def exploreWikiSection(self, sectiontitle): 
         return wiki_section.wiki_section(self._graph, getNodeByTitle(sectiontitle))
 
 
 
+
+
+
+
+    # view data 
+
     def dump(self): 
         self._graph.printData()
 
     def view(self): 
         self._graph.drawGraph()
+
+    def getNodeByTitle(self, title): 
+        return self._graph.getNodeByTitle(title)
+
+
+
+
+
+
+
+
+
+
+
+
 
     '''
 
